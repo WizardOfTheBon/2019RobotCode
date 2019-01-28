@@ -3,13 +3,11 @@ from wpilib.drive import MecanumDrive
 from networktables import NetworkTables
 step2 = 0
 
-# To see messages from networktables, you must setup logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
-NetworkTables.initialize()
-sd = NetworkTables.getTable("SmartDashboard")
 
-class MyRobot(wpilib.IterativeRobot):
+
+class MyRobot(wpilib.TimedRobot):
 	# Channels on the roboRIO that the motor controllers are plugged in to
 	frontLeftChannel = 3
 	rearLeftChannel = 4
@@ -50,19 +48,15 @@ class MyRobot(wpilib.IterativeRobot):
 		
 		
 	def forward(self):
-	  self.frontLeftMotor.set(.5)
-	  self.frontRightMotor.set(.5)
-	  self.rearLeftMotor.set(.5)
-	  self.rearRightMotor.set(.5)
+		self.frontLeftMotor.set(.5)
+		self.frontRightMotor.set(.5)
+		self.rearLeftMotor.set(.5)
+		self.rearRightMotor.set(.5)
 	def stop(self):
-	  self.frontLeftMotor.set(0)
-	  self.frontRightMotor.set(0)
-	  self.rearLeftMotor.set(0)
-	  self.rearRightMotor.set(0)
-
-	def autonomousInit(self):
-		self.frontRightMotor.setQuadraturePosition(0,0)
-		
+		self.frontLeftMotor.set(0)
+		self.frontRightMotor.set(0)
+		self.rearLeftMotor.set(0)
+		self.rearRightMotor.set(0)
 		
 
 	def autonomousPeriodic(self):
@@ -84,26 +78,26 @@ class MyRobot(wpilib.IterativeRobot):
 		# stops the robot after 10 feet, waits a second, and prepares for the next
 		# step by setting the motors to go right and fulfilling the step2 requirement
 		
-		# i checking for 84 inches because the rear left motor is what we are 
-		# checking and it would have to go backwards for the robot to go right,
-		# moving the encoder number down 36 inches for 3 feet
-		# it says 36 times square root 2 because we predict that for every root 2
-		# that the wheels turn, it will move 1 to the side, requiring root 2 times
-		# 36 backwards inches to get 36 right inches
+		#i am checking for 84 inches because the rear left motor is what we are 
+		#checking and it would have to go backwards for the robot to go right,
+		#moving the encoder number down 36 inches for 3 feet
+		#it says 36 times square root 2 because we predict that for every root 2
+		#that the wheels turn, it will move 1 to the side, requiring root 2 times
+		#36 backwards inches to get 36 right inches
+		
 		if inches <= (120 - (36 * math.sqrt(2))) and step2 == 1:
 			self.stop()
 		
-		#    __
-		#   /  \
-		#  | /\ |
-		#  | \/ |
-		#   \  /
-		#    ^^
+		logging.warning("ticks: " + str(self.frontRightMotor.getQuadraturePosition()))
+		logging.warning("inches: " + str(inches))
 		
+	def autonomousInit(self):
+		self.frontRightMotor.setQuadraturePosition(0,0)
+		logging.info("Captain, your robot's quadrature position has been set to 0, sir!")
 		
 		
 	def operatorControl(self):
-		"""Runs the motors with Mecanum drive."""
+		'''Runs the motors with Mecanum drive.'''
 
 		self.drive.setSafetyEnabled(True)
 		while self.isOperatorControl() and self.isEnabled():
