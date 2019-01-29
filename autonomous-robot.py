@@ -44,11 +44,18 @@ class MyRobot(wpilib.IterativeRobot):
         self.rearLeftMotor.setQuadraturePosition(0,0)
 
     def autonomousPeriodic(self):
-        self.frontLeftMotor.set(.5)
-        self.frontRightMotor.set(.5)
-        self.rearLeftMotor.set(.5)
-        self.rearRightMotor.set(.5)
-        
+        LS=wpilib.DigitalInput(9)
+        if LS.get()==1:
+            self.frontLeftMotor.set(.5)
+            self.frontRightMotor.set(.5)
+            self.rearLeftMotor.set(.5)
+            self.rearRightMotor.set(.5)
+        else:
+            self.frontLeftMotor.set(0)
+            self.frontRightMotor.set(0)
+            self.rearLeftMotor.set(0)
+            self.rearRightMotor.set(0)
+            
     def operatorControl(self):
         """Runs the motors with Mecanum drive."""
 
