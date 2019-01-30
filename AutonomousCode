@@ -17,7 +17,10 @@ class MyRobot(wpilib.TimedRobot):
 	# The channel on the driver station that the joystick is connected to
 	joystickChannel = 0
 
+
 	def robotInit(self):
+	
+
 		"""Robot initialization function"""
 		self.frontLeftMotor = ctre.WPI_TalonSRX(self.frontLeftChannel)
 		self.rearLeftMotor = ctre.WPI_TalonSRX(self.rearLeftChannel)
@@ -45,55 +48,67 @@ class MyRobot(wpilib.TimedRobot):
 
 		self.stick = wpilib.Joystick(self.joystickChannel)
 		
-		
-		
-	def forward(self):
-		self.frontLeftMotor.set(.5)
-		self.frontRightMotor.set(.5)
-		self.rearLeftMotor.set(.5)
-		self.rearRightMotor.set(.5)
+		self.variable = wpilib.AnalogInput(0)
+		self.drive.setSafetyEnabled(False)
+	def forward(self, speed):
+		if speed > 1:
+			speed = 1
+		self.frontLeftMotor.set(speed)
+		self.frontRightMotor.set(speed)
+		self.rearLeftMotor.set(speed)
+		self.rearRightMotor.set(speed)
 	def stop(self):
 		self.frontLeftMotor.set(0)
 		self.frontRightMotor.set(0)
 		self.rearLeftMotor.set(0)
 		self.rearRightMotor.set(0)
 		
-
-	def autonomousPeriodic(self):
-		inches = self.frontRightMotor.getQuadraturePosition() * 0.0061359232
-		# global step2 because it needs to know that the variable step2
-		# that it is calling has already been assigned a number in the
-		# global scope, and that it is not a local variable
-		global step2
-		
-		
-		if inches < 120:
-			self.forward()
-		# goes forward to 10 feet if the robot has not gotten there yet
-		if inches >= 120:
-			self.stop()
-			wpilib.Timer.delay(1)
-			self.right()
-			step2 = 1
-		# stops the robot after 10 feet, waits a second, and prepares for the next
-		# step by setting the motors to go right and fulfilling the step2 requirement
-		
-		#i am checking for 84 inches because the rear left motor is what we are 
-		#checking and it would have to go backwards for the robot to go right,
-		#moving the encoder number down 36 inches for 3 feet
-		#it says 36 times square root 2 because we predict that for every root 2
-		#that the wheels turn, it will move 1 to the side, requiring root 2 times
-		#36 backwards inches to get 36 right inches
-		
-		if inches <= (120 - (36 * math.sqrt(2))) and step2 == 1:
-			self.stop()
-		
-		logging.warning("ticks: " + str(self.frontRightMotor.getQuadraturePosition()))
-		logging.warning("inches: " + str(inches))
 		
 	def autonomousInit(self):
 		self.frontRightMotor.setQuadraturePosition(0,0)
 		logging.info("Captain, your robot's quadrature position has been set to 0, sir!")
+		
+	def autonomousPeriodic(self):
+		voltage = self.variable.getVoltage()
+		inches = self.frontRightMotor.getQuadraturePosition() * 0.0061359232
+		print(str(voltage))
+		if voltage > 1:
+			self.forward(voltage/6)
+			print(inches)
+		else:
+			self.stop()
+		#   *   ___   *
+		#   _  /)0)\  _
+		#    \ \___/ /
+		#     \  |  /
+		#      o-|-o
+		#        |
+		#       / \
+		#      /   \
+		#     o     o
+		#     |     |
+		#    _|     |_
+		
+		#      |  |
+		#   \   __   /
+		#     /    \
+		#  - ( ^__^ ) -
+		#     \ __ /
+		#   /        \
+		#      |  |
+		
+		
+		'''if self.variable == True:
+			if inches < 120:
+				self.forward()
+			# goes forward to 10 feet if the robot has not gotten there yet
+			elif inches >= 120:
+				self.stop()'''
+				
+		
+		'''logging.warning("ticks: " + str(self.frontRightMotor.getQuadraturePosition()))
+		logging.warning("inches: " + str(inches))
+		'''
 		
 		
 	def operatorControl(self):
