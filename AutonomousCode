@@ -13,43 +13,49 @@ class MyRobot(wpilib.TimedRobot):
 	rearLeftChannel = 4
 	frontRightChannel = 5
 	rearRightChannel = 1
-
-	# The channel on the driver station that the joystick is connected to
-	joystickChannel = 0
-
-
-	def robotInit(self):
 	
-
+	# The channel on the driver station that the joystick is connected to
+	joystickChannel = 1
+	
+	
+	def robotInit(self):
+		
+		
+		
 		"""Robot initialization function"""
 		self.frontLeftMotor = ctre.WPI_TalonSRX(self.frontLeftChannel)
 		self.rearLeftMotor = ctre.WPI_TalonSRX(self.rearLeftChannel)
 		self.frontRightMotor = ctre.WPI_TalonSRX(self.frontRightChannel)
 		self.rearRightMotor = ctre.WPI_TalonSRX(self.rearRightChannel)
-
+		
 		# invert the left side motors
 		self.frontLeftMotor.setInverted(True)
-
+		
 		# you may need to change or remove this to match your robot
 		self.rearLeftMotor.setInverted(True)
-
+		
 		self.drive = MecanumDrive(
 			self.frontLeftMotor,
 			self.rearLeftMotor,
 			self.frontRightMotor,
 			self.rearRightMotor,
 		)
-
+		
 		self.drive.setExpiration(0.1)
 		self.frontLeftMotor.setSafetyEnabled(False)
 		self.frontRightMotor.setSafetyEnabled(False)
 		self.rearLeftMotor.setSafetyEnabled(False)
 		self.rearRightMotor.setSafetyEnabled(False)
-
+		
 		self.stick = wpilib.Joystick(self.joystickChannel)
 		
-		self.variable = wpilib.AnalogInput(0)
+		self.frontRightMotor.setQuadraturePosition(0,0)
+		logging.info("Captain, your robot's quadrature position has been set to 0, sir!")
+		
+		self.button1 = self.stick.getButton(1)
+		
 		self.drive.setSafetyEnabled(False)
+		
 	def forward(self, speed):
 		if speed > 1:
 			speed = 1
@@ -64,56 +70,21 @@ class MyRobot(wpilib.TimedRobot):
 		self.rearRightMotor.set(0)
 		
 		
-	def autonomousInit(self):
-		self.frontRightMotor.setQuadraturePosition(0,0)
-		logging.info("Captain, your robot's quadrature position has been set to 0, sir!")
+#	def autonomousInit(self):
+	
 		
-	def autonomousPeriodic(self):
-		voltage = self.variable.getVoltage()
-		inches = self.frontRightMotor.getQuadraturePosition() * 0.0061359232
-		print(str(voltage))
-		if voltage > 1:
-			self.forward(voltage/6)
-			print(inches)
+#	def autonomousPeriodic(self):
+		
+	def teleopPeriodic(self):
+		
+		if self.button1 == True:
+			self.forward(0.5)
 		else:
 			self.stop()
-		#   *   ___   *
-		#   _  /)0)\  _
-		#    \ \___/ /
-		#     \  |  /
-		#      o-|-o
-		#        |
-		#       / \
-		#      /   \
-		#     o     o
-		#     |     |
-		#    _|     |_
-		
-		#      |  |
-		#   \   __   /
-		#     /    \
-		#  - ( ^__^ ) -
-		#     \ __ /
-		#   /        \
-		#      |  |
-		
-		
-		'''if self.variable == True:
-			if inches < 120:
-				self.forward()
-			# goes forward to 10 feet if the robot has not gotten there yet
-			elif inches >= 120:
-				self.stop()'''
-				
-		
-		'''logging.warning("ticks: " + str(self.frontRightMotor.getQuadraturePosition()))
-		logging.warning("inches: " + str(inches))
-		'''
-		
 		
 	def operatorControl(self):
 		'''Runs the motors with Mecanum drive.'''
-
+		
 		self.drive.setSafetyEnabled(True)
 		while self.isOperatorControl() and self.isEnabled():
 			# Use the joystick X axis for lateral movement, Y axis for forward movement, and Z axis for rotation.
@@ -121,9 +92,9 @@ class MyRobot(wpilib.TimedRobot):
 			self.drive.driveCartesian(
 				self.stick.getX(), self.stick.getY(), self.stick.getZ(), 0
 			)
-
+			
 			wpilib.Timer.delay(0.005)  # wait 5ms to avoid hogging CPU cycles
-
-
+		
+			
 if __name__ == "__main__":
 	wpilib.run(MyRobot)
