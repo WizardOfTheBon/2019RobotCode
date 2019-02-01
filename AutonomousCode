@@ -1,4 +1,6 @@
 import wpilib, ctre, math, logging
+import wpilib.joystick
+import wpilib.buttons.joystickbutton
 from wpilib.drive import MecanumDrive
 from networktables import NetworkTables
 step2 = 0
@@ -15,14 +17,11 @@ class MyRobot(wpilib.TimedRobot):
 	rearRightChannel = 1
 	
 	# The channel on the driver station that the joystick is connected to
-	joystickChannel = 1
-	
+	joystickChannel = 0
 	
 	def robotInit(self):
-		
-		
-		
 		"""Robot initialization function"""
+		# assigning motors
 		self.frontLeftMotor = ctre.WPI_TalonSRX(self.frontLeftChannel)
 		self.rearLeftMotor = ctre.WPI_TalonSRX(self.rearLeftChannel)
 		self.frontRightMotor = ctre.WPI_TalonSRX(self.frontRightChannel)
@@ -34,36 +33,58 @@ class MyRobot(wpilib.TimedRobot):
 		# you may need to change or remove this to match your robot
 		self.rearLeftMotor.setInverted(True)
 		
+		# 
 		self.drive = MecanumDrive(
 			self.frontLeftMotor,
 			self.rearLeftMotor,
 			self.frontRightMotor,
 			self.rearRightMotor,
 		)
-		
 		self.drive.setExpiration(0.1)
-		self.frontLeftMotor.setSafetyEnabled(False)
-		self.frontRightMotor.setSafetyEnabled(False)
-		self.rearLeftMotor.setSafetyEnabled(False)
-		self.rearRightMotor.setSafetyEnabled(False)
 		
+		
+		# assigning the joystick and joystick buttons
 		self.stick = wpilib.Joystick(self.joystickChannel)
+		self.auxiliary = wpilib.Joystick(1) #calling buttons doesn't work with getButton
 		
+		# setting quadrature position (the numbers measured on the encoder) to start at 0, making the quadrature position the same at the beginning
 		self.frontRightMotor.setQuadraturePosition(0,0)
 		logging.info("Captain, your robot's quadrature position has been set to 0, sir!")
 		
-		self.button1 = self.stick.getButton(1)
+	# different directions for the drive train to move, and at certain speeds
+	def leftDrive(self, speed):
+		if speed > 1:
+			speed = 1
+		self.frontLeftMotor.set(speed * -1)
+		self.frontRightMotor.set(speed)
+		self.rearLeftMotor.set(speed)
+		self.rearRightMotor.set(speed * -1)
 		
-		self.drive.setSafetyEnabled(False)
+	def rightDrive(self, speed):
+		if speed > 1:
+			speed = 1
+		self.frontLeftMotor.set(speed)
+		self.frontRightMotor.set(speed * -1)
+		self.rearLeftMotor.set(speed * -1)
+		self.rearRightMotor.set(speed)
 		
-	def forward(self, speed):
+	def forwardDrive(self, speed):
 		if speed > 1:
 			speed = 1
 		self.frontLeftMotor.set(speed)
 		self.frontRightMotor.set(speed)
 		self.rearLeftMotor.set(speed)
 		self.rearRightMotor.set(speed)
-	def stop(self):
+		
+	def backwardDrive(self, speed):
+		if speed > 1:
+			speed = 1
+		self.frontLeftMotor.set(speed * -1)
+		self.frontRightMotor.set(speed * -1)
+		self.rearLeftMotor.set(speed * -1)
+		self.rearRightMotor.set(speed * -1)
+		
+	def stopDrive(self):
 		self.frontLeftMotor.set(0)
 		self.frontRightMotor.set(0)
 		self.rearLeftMotor.set(0)
@@ -76,14 +97,7 @@ class MyRobot(wpilib.TimedRobot):
 #	def autonomousPeriodic(self):
 		
 	def teleopPeriodic(self):
-		
-		if self.button1 == True:
-			self.forward(0.5)
-		else:
-			self.stop()
-		
-	def operatorControl(self):
-		'''Runs the motors with Mecanum drive.'''
+		# makes the robot go forward when button1 is pressed
 		
 		self.drive.setSafetyEnabled(True)
 		while self.isOperatorControl() and self.isEnabled():
@@ -92,6 +106,15 @@ class MyRobot(wpilib.TimedRobot):
 			self.drive.driveCartesian(
 				self.stick.getX(), self.stick.getY(), self.stick.getZ(), 0
 			)
+			
+			# robot will go forwards and backwards when button 2 and 1 are pressed on joystick channel 1
+			if self.auxiliary.getButton(2):
+				self.forwardDrive(0.5)
+			elif self.auxiliary.getButton(1):
+				self.backwardDrive(0.5)
+			else:
+				self.stopDrive()
+				
 			
 			wpilib.Timer.delay(0.005)  # wait 5ms to avoid hogging CPU cycles
 		
