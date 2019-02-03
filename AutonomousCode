@@ -11,10 +11,10 @@ logging.basicConfig(level=logging.INFO)
 
 class MyRobot(wpilib.TimedRobot):
 	# Channels on the roboRIO that the motor controllers are plugged in to
-	frontLeftChannel = 3
-	rearLeftChannel = 4
-	frontRightChannel = 5
-	rearRightChannel = 1
+	frontLeftChannel = 5
+	rearLeftChannel = 1
+	frontRightChannel = 3
+	rearRightChannel = 4
 	
 	# The channel on the driver station that the joystick is connected to
 	joystickChannel = 0
@@ -24,16 +24,15 @@ class MyRobot(wpilib.TimedRobot):
 		# assigning motors
 		self.frontLeftMotor = ctre.WPI_TalonSRX(self.frontLeftChannel)
 		self.rearLeftMotor = ctre.WPI_TalonSRX(self.rearLeftChannel)
-		self.frontRightMotor = ctre.WPI_TalonSRX(self.frontRightChannel)
+		self.frontRightMotor = ctre.WPI_TalonSRX(self.frontRightChannel) 
 		self.rearRightMotor = ctre.WPI_TalonSRX(self.rearRightChannel)
 		
-		# invert the left side motors
-		self.frontLeftMotor.setInverted(True)
+		# invert the right side motors
+		#self.rearLeftMotor.setInverted(True)
+		#self.frontLeftMotor.setInverted(True)
+		#self.rearRightMotor.setInverted(True)
+		#self.frontRightMotor.setInverted(True)
 		
-		# you may need to change or remove this to match your robot
-		self.rearLeftMotor.setInverted(True)
-		
-		# 
 		self.drive = MecanumDrive(
 			self.frontLeftMotor,
 			self.rearLeftMotor,
@@ -42,10 +41,11 @@ class MyRobot(wpilib.TimedRobot):
 		)
 		self.drive.setExpiration(0.1)
 		
-		
+		# makes a driver station method to call buttons with
+		self.ds = wpilib.DriverStation.getInstance()
 		# assigning the joystick and joystick buttons
 		self.stick = wpilib.Joystick(self.joystickChannel)
-		self.auxiliary = wpilib.Joystick(1) #calling buttons doesn't work with getButton
+		
 		
 		# setting quadrature position (the numbers measured on the encoder) to start at 0, making the quadrature position the same at the beginning
 		self.frontRightMotor.setQuadraturePosition(0,0)
@@ -56,33 +56,33 @@ class MyRobot(wpilib.TimedRobot):
 		if speed > 1:
 			speed = 1
 		self.frontLeftMotor.set(speed * -1)
-		self.frontRightMotor.set(speed)
+		self.frontRightMotor.set(speed * -1)
 		self.rearLeftMotor.set(speed)
-		self.rearRightMotor.set(speed * -1)
+		self.rearRightMotor.set(speed)
 		
 	def rightDrive(self, speed):
 		if speed > 1:
 			speed = 1
 		self.frontLeftMotor.set(speed)
-		self.frontRightMotor.set(speed * -1)
+		self.frontRightMotor.set(speed)
 		self.rearLeftMotor.set(speed * -1)
-		self.rearRightMotor.set(speed)
+		self.rearRightMotor.set(speed * -1)
 		
 	def forwardDrive(self, speed):
 		if speed > 1:
 			speed = 1
+		self.frontRightMotor.set(speed * -1)
 		self.frontLeftMotor.set(speed)
-		self.frontRightMotor.set(speed)
+		self.rearRightMotor.set(speed * -1)
 		self.rearLeftMotor.set(speed)
-		self.rearRightMotor.set(speed)
 		
 	def backwardDrive(self, speed):
 		if speed > 1:
 			speed = 1
 		self.frontLeftMotor.set(speed * -1)
-		self.frontRightMotor.set(speed * -1)
+		self.frontRightMotor.set(speed)
 		self.rearLeftMotor.set(speed * -1)
-		self.rearRightMotor.set(speed * -1)
+		self.rearRightMotor.set(speed)
 		
 	def stopDrive(self):
 		self.frontLeftMotor.set(0)
@@ -91,32 +91,50 @@ class MyRobot(wpilib.TimedRobot):
 		self.rearRightMotor.set(0)
 		
 		
-#	def autonomousInit(self):
-	
+	def autonomousInit(self):
+		pass
 		
-#	def autonomousPeriodic(self):
+	def autonomousPeriodic(self):
+		inches = self.frontRightMotor.getQuadraturePosition()*.06
+		if inches < 10:
+			self.forwardDrive(.5)
 		
+	def teleopInit(self):
+		self.drive.setSafetyEnabled(False)
+		self.stopDrive()
 	def teleopPeriodic(self):
-		# makes the robot go forward when button1 is pressed
+		#print(str(self.ds.getStickButton(1, 1)))
+		self.x = self.stick.getX()
+		self.y = self.stick.getY()*-1
+		self.z = self.stick.getZ()
+		 
+		if self.x < .15 and self.x > -.15:
+			self.x = 0
+		if self.y < .15 and self.y > -.15:
+			self.y = 0
+		if self.z < .15 and self.z > -.15:
+			self.z = 0
 		
-		self.drive.setSafetyEnabled(True)
-		while self.isOperatorControl() and self.isEnabled():
 			# Use the joystick X axis for lateral movement, Y axis for forward movement, and Z axis for rotation.
 			# This sample does not use field-oriented drive, so the gyro input is set to zero.
+		
+		
+		# robot will go forwards and backwards when button 2 and 1 are pressed on joystick channel 1
+		if self.ds.getStickButton(1, 2):
+			self.forwardDrive(0.5)
+		elif self.ds.getStickButton(1, 1):
+			self.backwardDrive(0.5)
+		elif self.ds.getStickButton(1, 6):
+			self.leftDrive(0.5)
+		elif self.ds.getStickButton(1, 8):
+			self.rightDrive(0.5)
+		else:
 			self.drive.driveCartesian(
-				self.stick.getX(), self.stick.getY(), self.stick.getZ(), 0
+			self.x, self.y, self.z, 0
 			)
 			
-			# robot will go forwards and backwards when button 2 and 1 are pressed on joystick channel 1
-			if self.auxiliary.getButton(2):
-				self.forwardDrive(0.5)
-			elif self.auxiliary.getButton(1):
-				self.backwardDrive(0.5)
-			else:
-				self.stopDrive()
-				
-			
-			wpilib.Timer.delay(0.005)  # wait 5ms to avoid hogging CPU cycles
+		print(self.z)
+		wpilib.Timer.delay(0.005)  # wait 5ms to avoid hogging CPU cycles
 		
 			
 if __name__ == "__main__":
