@@ -67,43 +67,14 @@ class MyRobot(wpilib.TimedRobot):
 		elif volts < 3.1:
 			return(3)
 	
-	def pullyHeight(destination)
-	'''Uses the destination parameter to move the mast to a specified height.'''
-	
+	def pullyHeight(level, offset)
+		'''Moves the pully to certain levels, with a certain offset based on hatch or cargo. The cargo ship has a unique offset (supposedly), and the hatch has no offset.'''
+		
 	def spinBar(direction)
-	'''Spins the manipulator either in or out for gathering or depositing the cargo and hatches. Positive 1 rotates cargo out of the manipulator.
-	Negative 1 rotates the cargo into the manipulator. The direction parameter determines this number.'''
-	
-	
-	
-	def hatchLevel1
-	'''Moves the mast and manipulator to the position of the first level hatch depositing spot.'''
-	
-	def hatchLevel2
-	
-	def hatchLevel3
-	
-	
-	
-	def cargoLevel1
-	
-	def cargoCargoShip
-	
-	def cargoLevel2
-	
-	def cargoLevel3
-	
-	
-	
-	def habLevel2On
-	
-	def habLevel2Off
-	
-	def habLevel3OnFromGround
-	
-	def habLevel3OnFromLevel2
-	
-	
+		'''Spins the manipulator either in or out for gathering or depositing the cargo and hatches. Positive 1 rotates cargo out of the manipulator.
+		Negative 1 rotates the cargo into the manipulator. The direction parameter determines this number.'''
+		
+	# insert functions
 	
 	def robotInit(self):
 		"""Robot initialization function"""
@@ -146,7 +117,7 @@ class MyRobot(wpilib.TimedRobot):
 		if self.ds.getStickButton(0, 4): # cargo ship pully height
 			pullyHeightCargoShip = Job()
 			pullyHeightCargoShip.function = 'pullyHeight'
-			pullyHeightCargoShip.parameters = '(25)' # random number for cargo ship height
+			pullyHeightCargoShip.parameters = '(1, 25)' # random number for cargo ship height
 		# buttons controlling baseLifter
 		if self.ds.getStickButton(0, 5):
 			
