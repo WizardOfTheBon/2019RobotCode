@@ -1,4 +1,4 @@
-import ctre, wpilib
+import wpilib, ctre
 
 
 class Job:
@@ -27,71 +27,70 @@ class Queue:
 		
 	# remove will return the value of the item at the beginning of the list, and remove it
 	def remove(self):
-		if len(self.queue) > 0
+		if len(self.queue) > 0:
 			return(self.queue.pop())
 		else:
 			return()
 
 class MyRobot(wpilib.TimedRobot):
-	
-	self.ticksPerInchPulley = 30 # 30 ticks per inch is just a guess, the number is probably different
-	self.ticksperInchLifter = 30
-	self.ticksperInchWheels = 30
-	self.ticksperInchCrabbing = 31
-	self.pulleyDeadbandInches = 0.5
-	
-	self.queue = Queue()
-	
-	self.ds = wpilib.DriverStation.getInstance()
-	
-	self.extraHeight = 1 # this is the distance (in inches) that the robot will raise above each hab level before going back down
-	
-	self.lifter1to2 = 6 + self.extraHeight # these measurements are in inches
-	self.lifter1to3 = 18 + self.extraHeight
-	self.lifter2to3 = 12 + self.extraheight
-	
-	self.crab1 = 1 # these are the distances that the robot will crab onto the different hab levels, in inches
-	self.crab2 = 2
-	self.crab3 = 12
-	self.crab4 = 2
-	self.crab5 = 4
-	
-	self.hatch1HeightInches = 20 # these numbers are just guesses, and are in inches
-	self.hatch2HeightInches = 48
-	self.hatch3HeightInches = 76
-	
-	self.cargo3HeightInches = 84
-	self.cargo2HeightInches = 56
-	self.cargo1HeightInches = 28
-	
-	self.frontLeftChannel = 0
-	self.frontRightChannel = 0
-	self.rearLeftChannel = 0
-	self.rearRightChannel = 0
-	self.leftLeadScrewChannel = 0
-	self.rightLeadScrewChannel = 0
-	self.pulleyChannel = 0
-	self.spinBarChannel = 0
-	
-	self.frontLeftMotor = ctre.WPI_TalonSRX(self.frontLeftChannel)
-	self.frontRightMotor = ctre.WPI_TalonSRX(self.frontRightChannel)
-	self.rearLeftMotor = ctre.WPI_TalonSRX(self.rearLeftChannel)
-	self.rearRightMotor = ctre.WPI_TalonSRX(self.rearRightChannel)
-	self.leftLeadScrewMotor = ctre.WPI_TalonSRX(self.leftLeadScrewChannel)
-	self.rightLeadScrewMotor = ctre.WPI_TalonSRX(self.rightLeadScrewChannel)
-	self.pulleyMotor = ctre.WPI_TalonSRX(self.pulleyChannel)
-	self.spinBarMotor = ctre.WPI_TalonSRX(self.spinBarChannel)
-	
-	self.drive = MecanumDrive(
-			self.frontLeftMotor,
-			self.rearLeftMotor,
-			self.frontRightMotor,
-			self.rearRightMotor,
-		)
-	
-	self.pulleyMotorModified = (self.pulleyMotor * 0.5) # slows down the Pulley motor speed just in case it goes way too fast
-	self.pulleyDeadbandInches = .5 #how many inches we are okay with the pulley being off (to avoid the jiggle)
-	
+	def __init__(self):
+		
+		self.ticksPerInchPulley = 30 # 30 ticks per inch is just a guess, the number is probably different
+		self.ticksperInchLifter = 30
+		self.ticksperInchWheels = 30
+		self.ticksperInchCrabbing = 31
+		self.pulleyDeadbandInches = 0.5
+		
+		self.queue = Queue()
+		
+		self.ds = wpilib.DriverStation.getInstance()
+		
+		self.extraHeight = 1 # this is the distance (in inches) that the robot will raise above each hab level before going back down
+		
+		self.lifter1to2 = 6 + self.extraHeight # these measurements are in inches
+		self.lifter1to3 = 18 + self.extraHeight
+		self.lifter2to3 = 12 + self.extraHeight
+		
+		self.crab1 = 1 # these are the distances that the robot will crab onto the different hab levels, in inches
+		self.crab2 = 2
+		self.crab3 = 12
+		self.crab4 = 2
+		self.crab5 = 4
+		
+		self.hatch1HeightInches = 20 # these numbers are just guesses, and are in inches
+		self.hatch2HeightInches = 48
+		self.hatch3HeightInches = 76
+		
+		self.cargo3HeightInches = 84
+		self.cargo2HeightInches = 56
+		self.cargo1HeightInches = 28
+		
+		self.frontLeftChannel = 0
+		self.frontRightChannel = 0
+		self.rearLeftChannel = 0
+		self.rearRightChannel = 0
+		self.leftLeadScrewChannel = 0
+		self.rightLeadScrewChannel = 0
+		self.pulleyChannel = 0
+		self.spinBarChannel = 0
+		
+		self.frontLeftMotor = ctre.WPI_TalonSRX(self.frontLeftChannel)
+		self.frontRightMotor = ctre.WPI_TalonSRX(self.frontRightChannel)
+		self.rearLeftMotor = ctre.WPI_TalonSRX(self.rearLeftChannel)
+		self.rearRightMotor = ctre.WPI_TalonSRX(self.rearRightChannel)
+		self.leftLeadScrewMotor = ctre.WPI_TalonSRX(self.leftLeadScrewChannel)
+		self.rightLeadScrewMotor = ctre.WPI_TalonSRX(self.rightLeadScrewChannel)
+		self.pulleyMotor = ctre.WPI_TalonSRX(self.pulleyChannel)
+		self.spinBarMotor = ctre.WPI_TalonSRX(self.spinBarChannel)
+		
+		
+		self.pulleyMotorModified = (self.pulleyMotor.get() * 0.5) # slows down the Pulley motor speed just in case it goes way too fast
+		self.pulleyDeadbandInches = .5 #how many inches we are okay with the pulley being off (to avoid the jiggle)
+		
+		
+		
+		#Last thing in the init function
+		super().__init__()
 	def hab(startLevel, goalLevel):
 		'''This function will '''
 		if goalLevel > 1:
@@ -217,7 +216,9 @@ class MyRobot(wpilib.TimedRobot):
 		pullyHeight(level, payload)
 		dispense(payload)
 		
-	#def align(angle, distance):
+	def align(angle, distance):
+		
+		
 		
 	def levelSelector():
 		'''This function returns the level as an integer by checking the rotary switch controlling rocket level.'''
@@ -303,7 +304,7 @@ class MyRobot(wpilib.TimedRobot):
 		pass
 	def checkSwitches(self):
 		
-		if E-Stop == 1: #E-Stop button pressed, stop all motors and remove all jobs from job queue.
+		if self.ds.getStickButton(0, 1): #E-Stop button pressed, stop all motors and remove all jobs from job queue.
 			
 			self.frontLeftMotor = 0
 			self.frontRightMotor = 0
@@ -314,10 +315,9 @@ class MyRobot(wpilib.TimedRobot):
 			self.pulleyMotorModified = 0
 			self.spinBarMotor = 0
 			
-			#Remove all queued Jobs
+			#Remove all queued jobs by setting the queue to the blank class
 			
-			for i in (len(self.queue.queue) - 1):
-				self.queue.remove()
+			self.queue = Queue()
 			
 			
 		else: #Check every other switch
@@ -326,119 +326,128 @@ class MyRobot(wpilib.TimedRobot):
 			# buttons controlling spinBar (3 position momentary switch)
 			
 			
-				pass
+			if self.ds.getStickButton(0, 2): # this means manual is turned on
+					
 				
-			if self.ds.getStickButton(0, 1): # cargo collecting
-				if wpilib.AnalogInput(0).getVoltage() < 2.5:
-					self.spinBarMotor.set(-1)
+				if self.ds.getStickButton(0, 10): # left lead screw out manual
+					self.leftLeadScrewMotor(0.5)
+					
+				elif self.ds.getStickButton(0, 9): # left lead screw in manual
+					self.leftLeadScrewMotor(-0.5)
+					
+				if self.ds.getStickButton(0, 12): # right lead screw out manual
+					self.rightLeadScrewMotor(0.5)
+					
+				elif self.ds.getStickButton(0, 11): # right lead screw in manual
+					self.rightLeadScrewMotor(-0.5)
+					
+				if self.ds.getStickButton(0, 7): # cargo collecting
+					if wpilib.AnalogInput(0).getVoltage() < 2.5:
+						self.spinBarMotor.set(-1)
+					else:
+						self.spinBarMotor.set(0)
+					
+				elif self.ds.getStickButton(0, 6): # manual cargo depositing
+					self.spinBarMotor.set(1)
+					
+				elif self.ds.getStickButton(0, 8): # manual hatch depositing
+					self.spinBarMotor.set(0.1)
+					
 				else:
 					self.spinBarMotor.set(0)
 				
-			elif self.ds.getStickButton(0, 2): # manual cargo depositing
-				self.spinBarMotor.set(1)
+				if self.ds.getStickButton(0, 4): # manual pulley up
+					self.pulleyMotorModified.set(0.5)
+					
+				elif self.ds.getStickButton(0, 5): # manual pulley down
+					self.pulleyMotorModified(-0.5)
 				
-			elif self.ds.getStickButton(0, 11): # manual hatch depositing
-				self.spinBarMotor.set(0.1)
+			elif self.ds.getStickButton(0, 3): # this means auto is turned on
 				
-			else:
-				self.spinBarMotor.set(0)
-			
-			
-			
-			# buttons controlling Pulley (2 buttons and a rotary switch)
-			
-			# hatch buttons
-			
-			if self.ds.getStickButton(0, 3): # hatch movement and depositing
-				depositPayloadHatch = Job()
-				depositPayloadHatch.function = 'depositPayload'
-				depositPayloadHatch.parameters = '(' + str(self.levelSelector) + ', 1)' # first parameter is the level, the second parameter is added height based on hatch or cargo
-				depositPayloadHatch.driveLock = True
-				self.queue.add(depositPayloadHatch)
+				# buttons controlling Pulley (2 buttons and a rotary switch)
 				
-			elif self.ds.getStickButton(0, 4):
-				hatchCollectHeight = Job()
-				hatchCollectHeight.function = 'hatchCollectHeight'
-				hatchCollectHeight.parameters = '()'
-				hatchCollectHeight.driveLock = True
-				self.queue.add(hatchCollectHeight)
+				# hatch buttons
 				
+				if self.ds.getStickButton(0, 13): # hatch movement and depositing
+					depositPayloadHatch = Job()
+					depositPayloadHatch.function = 'depositPayload'
+					depositPayloadHatch.parameters = '(' + str(self.levelSelector) + ', 1)' # first parameter is the level, the second parameter is added height based on hatch or cargo
+					depositPayloadHatch.driveLock = True
+					self.queue.add(depositPayloadHatch)
+					
+				elif self.ds.getStickButton(0, 16): # hatch collecting (from player station)
+					hatchCollectHeight = Job()
+					hatchCollectHeight.function = 'hatchCollectHeight'
+					hatchCollectHeight.parameters = '()'
+					hatchCollectHeight.driveLock = True
+					self.queue.add(hatchCollectHeight)
+					
+					
+				# cargo buttons
+					
+				elif self.ds.getStickButton(0, 14): # cargo movement and depositing
+					depositPayloadCargo = Job()
+					depositPayloadCargo.function = 'depositPayload'
+					depositPayloadCargo.parameters = '(' + str(self.levelSelector) + ', 2)'
+					depositPayloadCargo.driveLock = True
+					self.queue.add(depositPayloadCargo)
+					
+				elif self.ds.getStickButton(0, 17): # cargo ship depositing
+					depositPayloadCargoShip = Job()
+					depositPayloadCargoShip.function = 'depositPayload'
+					depositPayloadCargoShip.parameters = '(1, 3)' # random number for cargo ship height
+					
+				# Pulley reset button
+					
+				elif self.ds.getStickButton(0, 15): # pulley reset
+					resetPulley = Job()
+					resetPulley.function = 'resetPulley'
+					resetPulley.parameters = '()'
+					resetPulley.driveLock = False
+					self.queue.add(resetPulley)
+					
+					
+					
+				# buttons controlling baseLifter (3 buttons)
 				
-			# cargo buttons
-				
-			elif self.ds.getStickButton(0, 5): # cargo movement and depositing
-				depositPayloadCargo = Job()
-				depositPayloadCargo.function = 'depositPayload'
-				depositPayloadCargo.parameters = '(' + str(self.levelSelector) + ', 2)'
-				depositPayloadCargo.driveLock = True
-				self.queue.add(depositPayloadCargo)
-				
-			elif self.ds.getStickButton(0, 6): # cargo ship depositing
-				depositPayloadCargoShip = Job()
-				depositPayloadCargoShip.function = 'depositPayload'
-				depositPayloadCargoShip.parameters = '(1, 3)' # random number for cargo ship height
-				
-			# Pulley reset button
-				
-			elif self.ds.getStickButton(0, 7): # pulley reset
-				resetPulley = Job()
-				resetPulley.function = 'resetPulley'
-				resetPulley.parameters = '()'
-				resetPulley.driveLock = False
-				self.queue.add(resetPulley)
-				
-				
-				
-			# buttons controlling baseLifter (3 buttons)
-			
-			if self.ds.getStickButton(0, 8): # hab level 1 to level 2
-				hab = Job()
-				hab.function = 'hab'
-				hab.parameters = '(1, 2)'
-				hab.driveLock = True
-				self.queue.add(hab)
-				
-			elif self.ds.getStickButton(0, 9): # hab level 1 to level 3
-				hab = Job()
-				hab.function = 'hab'
-				hab.parameters = '(1, 3)'
-				hab.driveLock = True
-				self.queue.add(hab)
-				
-			elif self.ds.getStickButton(0, 10): # hab level 2 to level 3
-				hab = Job()
-				hab.function ='hab'
-				hab.parameters = '(2, 3)'
-				hab.driveLock = True
-				self.queue.add(hab)
-				
-			if self.ds.getStickButton(0, 12): # left lead screw down manual
-				self.leftLeadScrewMotor(0.5)
-				
-			elif self.ds.getStickButton(0, 13): # left lead screw up manual
-				self.leftLeadScrewMotor(-0.5)
-				
-			if self.ds.getStickButton(0, 14): # right lead screw down manual
-				self.rightLeadScrewMotor(0.5)
-				
-			elif self.ds.getStickButton(0, 15): # right lead screw up manual
-				self.rightLeadScrewMotor(-0.5)
+				if self.ds.getStickButton(0, 18): # hab level 1 to level 2
+					hab = Job()
+					hab.function = 'hab'
+					hab.parameters = '(1, 2)'
+					hab.driveLock = True
+					self.queue.add(hab)
+					
+				elif self.ds.getStickButton(0, 20): # hab level 1 to level 3
+					hab = Job()
+					hab.function = 'hab'
+					hab.parameters = '(1, 3)'
+					hab.driveLock = True
+					self.queue.add(hab)
+					
+				elif self.ds.getStickButton(0, 19): # hab level 2 to level 3
+					hab = Job()
+					hab.function ='hab'
+					hab.parameters = '(2, 3)'
+					hab.driveLock = True
+					self.queue.add(hab)
+					
 				
 	def teleopPeriodic(self):
-		
 		# checks switches and sensors, which feed the queue with jobs
-		checkSwitches()
+		self.checkSwitches()
 		
 		# we are checking if a job is in the queue, and then calling the function that the first job makes using eval
 		if len(self.queue.queue) > 0:
-			currentJob = self.queue.queue.peek()
-			eval(currentJob.function + currentJob.parameters)
 		
-		# allows the driver to drive the robot when the currentJob allows them to, using the driveLock parameter in the job
-		if currentJob.drivelock = False:
-			self.drive.driveCartesian(
-					self.stick.getX(), self.stick.getY(), self.stick.getZ(), 0
-				)
+			currentJob = self.queue.peek()
+			
+			eval(currentJob.function + currentJob.parameters)
+			
+			# allows the driver to drive the robot when the currentJob allows them to, using the driveLock parameter in the job
+			if currentJob.drivelock == False:
+				self.drive.driveCartesian(
+						self.stick.getX(), self.stick.getY(), self.stick.getZ(), 0
+					)
 		
 if __name__ == "__main__":
 	wpilib.run(MyRobot)
