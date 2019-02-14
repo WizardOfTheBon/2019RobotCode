@@ -1,5 +1,36 @@
-import wpilib, ctre
+import wpilib, ctre, math, logging
+from wpilib.drive import MecanumDrive
+from networktables import NetworkTables
+from wpilib import CameraServer
+import numpy
+import math
+from enum import Enum
+import logging
+import sys
+import time
+import threading
 
+
+cond = threading.Condition()
+notified = False
+
+
+def connectionListener(connected, info):
+	print(info, '; Connected=%s' % connected)
+	with cond:
+		notified = True 
+		cond.notify()
+
+# To see messages from networktables, you must setup logging 
+NetworkTables.initialize() 
+NetworkTables.addConnectionListener(connectionListener, immediateNotify=True)
+sd = NetworkTables.getTable('SmartDashboard') 
+
+sd.getValue('adjust_x', 0)
+sd.getValue('adjust_y', 0)
+sd.getValue('adjust_z', 0)
+
+logging.basicConfig(level=logging.DEBUG)
 
 class Job:
 	def __init__(self):
@@ -448,6 +479,14 @@ class MyRobot(wpilib.TimedRobot):
 				self.drive.driveCartesian(
 						self.stick.getX(), self.stick.getY(), self.stick.getZ(), 0
 					)
-		
+		try:
+			test = sd.getValue('adjust_x', 0)
+			testy = sd.getValue('adjust_y', 0)
+			testz = sd.getValue('adjust_z', 0)
+			print('x ' + str(test))
+			print('y ' + str(testy))
+			print('z ' + str(testz))
+		except Exception as e:
+			print(str(e.args))
 if __name__ == "__main__":
 	wpilib.run(MyRobot)
