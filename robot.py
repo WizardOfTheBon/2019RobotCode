@@ -77,7 +77,10 @@ class MyRobot(wpilib.TimedRobot):
 		
 		self.queue = Queue()
 		
+		self.joystickChannel = 1
+		
 		self.ds = wpilib.DriverStation.getInstance()
+		self.stick = wpilib.Joystick(self.joystickChannel)
 		
 		self.extraHeight = 1 # this is the distance (in inches) that the robot will raise above each hab level before going back down
 		
@@ -92,6 +95,8 @@ class MyRobot(wpilib.TimedRobot):
 		
 		self.levelSelectorAnalogChannel = 0
 		self.IRSensorAnalogChannel = 1
+		
+		self.IRSensor = wpilib.AnalogInput(self.IRSensorAnalogChannel)
 		
 		self.bottomPulleyHallEffectChannel = 0
 		self.topPulleyHallEffectChannel = 1
@@ -146,6 +151,18 @@ class MyRobot(wpilib.TimedRobot):
 		self.spinBarMotor = ctre.WPI_TalonSRX(self.spinBarChannel)
 		
 		self.pulleyMotorModifier = 0.5 # slows down the Pulley motor speed just in case it goes way too fast
+		
+		self.drive = MecanumDrive(
+			self.frontLeftMotor,
+			self.rearLeftMotor,
+			self.frontRightMotor,
+			self.rearRightMotor,
+		)
+		
+		self.frontLeftMotor.setSafetyEnabled(False)
+		self.rearLeftMotor.setSafetyEnabled(False)
+		self.frontRightMotor.setSafetyEnabled(False)
+		self.rearRightMotor.setSafetyEnabled(False)
 		
 		#Last thing in the init function
 		super().__init__()
@@ -444,8 +461,8 @@ class MyRobot(wpilib.TimedRobot):
 				self.spinBarMotor.set(0)
 				self.queue.remove()
 			
-		'''This logic requires a job before this one to set the spinBar position to 0 when it is all the way back, without needing the spinBar to
-		go backwards multiple rotations to get to quadrature position 0. This is accomplished using the resetSpinBar function.'''
+		# This logic requires a job before this one to set the spinBar position to 0 when it is all the way back, without needing the spinBar to
+		# go backwards multiple rotations to get to quadrature position 0. This is accomplished using the resetSpinBar function.
 		elif payload == 1: # a hatch
 		
 			if currentPosition < (goalPositionHatch - self.spinBarDeadBand):
@@ -513,14 +530,14 @@ class MyRobot(wpilib.TimedRobot):
 		
 		if self.ds.getStickButton(0, 1): #E-Stop button pressed, stop all motors and remove all jobs from job queue.
 			
-			self.frontLeftMotor = 0
-			self.frontRightMotor = 0
-			self.rearLeftMotor = 0
-			self.rearRightMotor = 0
-			self.leftLeadScrewMotor = 0
-			self.rightLeadScrewMotor = 0
-			self.pulleyMotor = 0
-			self.spinBarMotor = 0
+			self.frontLeftMotor.set(0)
+			self.frontRightMotor.set(0)
+			self.rearLeftMotor.set(0)
+			self.rearRightMotor.set(0)
+			self.leftLeadScrewMotor.set(0)
+			self.rightLeadScrewMotor.set(0)
+			self.pulleyMotor.set(0)
+			self.spinBarMotor.set(0)
 			
 			#Remove all queued jobs by setting the queue to the blank class
 			
@@ -534,20 +551,20 @@ class MyRobot(wpilib.TimedRobot):
 			
 			
 			if self.ds.getStickButton(0, 10): # left lead screw out manual
-				self.leftLeadScrewMotor(self.lifterSpeed)
+				self.leftLeadScrewMotor.set(self.lifterSpeed)
 				
 			elif self.ds.getStickButton(0, 9): # left lead screw in manual
-				self.leftLeadScrewMotor(-1 * self.lifterSpeed)
+				self.leftLeadScrewMotor.set(-1 * self.lifterSpeed)
 				
 			if self.ds.getStickButton(0, 12): # right lead screw out manual
-				self.rightLeadScrewMotor(self.lifterSpeed)
+				self.rightLeadScrewMotor.set(self.lifterSpeed)
 				
 			elif self.ds.getStickButton(0, 11): # right lead screw in manual
-				self.rightLeadScrewMotor(-1 * self.lifterSpeed)
+				self.rightLeadScrewMotor.set(-1 * self.lifterSpeed)
 				
 				
 			if self.ds.getStickButton(0, 7): # cargo collecting
-				if wpilib.AnalogInput(self.IRSensorAnalogChannel).getVoltage() < self.IRSensorThreshold: # IR distance sensor stops the spinBar from spinning in when the ball is already in
+				if self.IRSensor.getVoltage() < self.IRSensorThreshold: # IR distance sensor stops the spinBar from spinning in when the ball is already in
 					self.spinBarMotor.set(-1)
 				else:
 					self.spinBarMotor.set(0)
@@ -566,7 +583,7 @@ class MyRobot(wpilib.TimedRobot):
 				self.pulleyMotor.set(self.pulleyMotorModifier)
 				
 			elif self.ds.getStickButton(0, 5): # manual pulley down
-				self.pulleyMotor(-1 * self.pulleyMotorModifier)
+				self.pulleyMotor.set(-1 * self.pulleyMotorModifier)
 				
 				
 				# buttons controlling Pulley (2 buttons and a rotary switch)
