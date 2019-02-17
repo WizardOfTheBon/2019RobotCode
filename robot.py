@@ -1,5 +1,7 @@
 import wpilib, ctre, math, logging
 from wpilib.drive import MecanumDrive
+from networktables import NetworkTablesimport wpilib, ctre, math, logging
+from wpilib.drive import MecanumDrive
 from networktables import NetworkTables
 from wpilib import CameraServer
 import numpy
@@ -92,6 +94,7 @@ class MyRobot(wpilib.TimedRobot):
 		self.selector4 = 12
 		
 		# buttons
+		self.EStop = 10
 		self.manualHatchDeposit = 1
 		self.autoHatchDeposit = 2
 		self.autoCargoDeposit = 3
@@ -107,7 +110,6 @@ class MyRobot(wpilib.TimedRobot):
 		self.driveJoystickChannel = 0
 		
 		self.ds = wpilib.DriverStation.getInstance()
-		self.rotarySwitch = wpilib.Joystick(self.rotarySwitchChannel)
 		self.driveStick = wpilib.Joystick(self.driveJoystickChannel)
 		
 		self.extraHeight = 1 # this is the distance (in inches) that the robot will raise above each hab level before going back down
@@ -572,7 +574,7 @@ class MyRobot(wpilib.TimedRobot):
 		
 	def checkSwitches(self):
 		
-		if self.ds.getStickButton(1, self.EStop): #E-Stop button pressed, stop all motors and remove all jobs from job queue.
+		if self.ds.getStickButton(1, self.EStop) ==1: #E-Stop button pressed, stop all motors and remove all jobs from job queue.
 			
 			self.frontLeftMotor.set(0)
 			self.frontRightMotor.set(0)
@@ -594,39 +596,39 @@ class MyRobot(wpilib.TimedRobot):
 			# buttons controlling spinBar (3 position momentary switch)
 			
 			
-			if self.ds.getStickButton(2, self.leftLeadScrewDown): # left lead screw out manual
+			if self.ds.getStickButton(2, self.leftLeadScrewDown)== 1: # left lead screw out manual
 				self.leftLeadScrewMotor.set(self.lifterSpeed)
 				
-			elif self.ds.getStickButton(2, self.leftLeadScrewUp): # left lead screw in manual
+			elif self.ds.getStickButton(2, self.leftLeadScrewUp) ==1: # left lead screw in manual
 				self.leftLeadScrewMotor.set(-1 * self.lifterSpeed)
 				
-			if self.ds.getStickButton(2, self.rightLeadScrewDown): # right lead screw out manual
+			if self.ds.getStickButton(2, self.rightLeadScrewDown) ==1: # right lead screw out manual
 				self.rightLeadScrewMotor.set(self.lifterSpeed)
 				
-			elif self.ds.getStickButton(2, self.rightLeadScrewUp): # right lead screw in manual
+			elif self.ds.getStickButton(2, self.rightLeadScrewUp) ==1: # right lead screw in manual
 				self.rightLeadScrewMotor.set(-1 * self.lifterSpeed)
 				
 				
-			if self.ds.getStickButton(2, self.spinBarIn): # cargo collecting
+			if self.ds.getStickButton(2, self.spinBarIn) ==1: # cargo collecting
 				if self.IRSensor.getVoltage() < self.IRSensorThreshold: # IR distance sensor stops the spinBar from spinning in when the ball is already in
 					self.spinBarMotor.set(-1)
 				else:
 					self.spinBarMotor.set(0)
 				
-			elif self.ds.getStickButton(2, self.spinBarOut): # manual cargo depositing
+			elif self.ds.getStickButton(2, self.spinBarOut) ==1: # manual cargo depositing
 				self.spinBarMotor.set(1)
 				
-			elif self.ds.getStickButton(1, self.manualHatchDeposit): # manual hatch depositing
+			elif self.ds.getStickButton(1, self.manualHatchDeposit) ==1: # manual hatch depositing
 				self.spinBarMotor.set(self.hatchDepositSpeed)
 				
 			else:
 				self.spinBarMotor.set(0)
 				
 				
-			if self.ds.getStickButton(2, self.manualPulleyUp): # manual pulley up
+			if self.ds.getStickButton(2, self.manualPulleyUp) ==1: # manual pulley up
 				self.pulleyMotor.set(self.pulleyMotorModifier)
 				
-			elif self.ds.getStickButton(2, self.manualPulleyDown): # manual pulley down
+			elif self.ds.getStickButton(2, self.manualPulleyDown)==1: # manual pulley down
 				self.pulleyMotor.set(-1 * self.pulleyMotorModifier)
 				
 				
@@ -634,40 +636,42 @@ class MyRobot(wpilib.TimedRobot):
 				
 				# hatch buttons
 				
-			if self.ds.getStickButton(1, self.autoHatchDeposit): # hatch movement and depositing (auto)
+			if self.ds.getStickButton(1, self.autoHatchDeposit)==1: # hatch movement and depositing (auto)
+				Deposit_pl = Job()
+				Deposit_pl.function = 'depositPayload'
+				Deposit_pl.parameters = '(self.levelSelector, 1)'
+				Deposit_pl.driveLock = True
+				self.queue.add(Deposit_pl)
 				
-				depositPayload(self.levelSelector, 1)
-				
-				
-			elif self.ds.getStickButton(1, self.hatchCollectHeight): # hatch collecting (from player station)
+			elif self.ds.getStickButton(1, self.hatchCollectHeight) == 1: # hatch collecting (from player station)
 				hatchCollectManual = Job()
 				hatchCollectManual.function = 'pulleyHeight'
 				hatchCollectManual.parameters = '(1, 1)'
 				hatchCollectManual.driveLock = True
-				self.queue.add(hatchCollectHeight)
+				self.queue.add(hatchCollectManual)
 				
 				hatchCollectManual = Job()
 				hatchCollectManual.function = 'resetSpinBar'
 				hatchCollectManual.parameters = '()'
 				hatchCollectManual.driveLock = False
-				self.queue.add(resetSpinBar)
+				self.queue.add(hatchCollectManual)
 				
 				
 			# cargo buttons
 				
-			elif self.ds.getStickButton(1, self.autoCargoDeposit): # cargo movement and depositing
+			elif self.ds.getStickButton(1, self.autoCargoDeposit) == 1: # cargo movement and depositing
 				
-				depositPayload(self.levelSelector, 2)
+				self.depositPayload(self.levelSelector, 2)
 				
 				
-			elif self.ds.getStickButton(1, self.autoCargoShipDeposit): # cargo ship depositing
+			elif self.ds.getStickButton(1, self.autoCargoShipDeposit) == 1: # cargo ship depositing
 				
-				depositPayload(self.levelSelector, 3)
+				self.depositPayload(self.levelSelector, 3)
 				
 				
 			# Pulley reset button
 				
-			elif self.ds.getStickButton(1, self.pulleyReset): # pulley reset
+			elif self.ds.getStickButton(1, self.pulleyReset) == 1: # pulley reset
 				resetPulley = Job()
 				resetPulley.function = 'resetPulley'
 				resetPulley.parameters = '()'
@@ -677,13 +681,13 @@ class MyRobot(wpilib.TimedRobot):
 				
 			# buttons controlling baseLifter (3 buttons)
 				
-			if self.ds.getStickButton(1, self.hab1to2): # hab level 1 to level 2
+			if self.ds.getStickButton(1, self.hab1to2) == 1: # hab level 1 to level 2
 				self.hab(1, 2)
 				
-			elif self.ds.getStickButton(1, self.hab1to3): # hab level 1 to level 3
+			elif self.ds.getStickButton(1, self.hab1to3) ==1: # hab level 1 to level 3
 				self.hab(1, 3)
 				
-			elif self.ds.getStickButton(1, self.hab2to3): # hab level 2 to level 3
+			elif self.ds.getStickButton(1, self.hab2to3) ==1: # hab level 2 to level 3
 				self.hab(2, 3)
 				
 				
@@ -709,7 +713,7 @@ class MyRobot(wpilib.TimedRobot):
 		else:
 			self.drive.driveCartesian(self.driveStick.getX(), self.driveStick.getY(), self.driveStick.getZ(), 0)
 		
-		if self.ds.getStickButton(0,2):
+		if self.ds.getStickButton(0,2) ==1:
 			try:
 				test = sd.getValue('adjust_x', 0)
 				testy = sd.getValue('adjust_y', 0)
@@ -719,8 +723,9 @@ class MyRobot(wpilib.TimedRobot):
 				print('z ' + str(testz))
 			except Exception as e:
 				print(str(e.args))
-			queuelength = self.queue.queue
-			self.drive.driveCartesian(self.driveStick.getX(test), self.driveStick.getY(testy), self.driveStick.getZ(testz), 0)
+			
+			if len(self.queue.queue) == 0 and self.ds.getStickButton(0,2) == 1:
+				self.drive.driveCartesian(self.driveStick.getX(test), self.driveStick.getY(testy), self.driveStick.getZ(testz), 0)
 			
 			
 if __name__ == "__main__":
