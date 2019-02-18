@@ -162,14 +162,14 @@ class MyRobot(wpilib.TimedRobot):
 		self.cargo3HeightInches = 84
 		self.cargoShipHeightInches = 36
 		
-		self.frontLeftChannel = 0
-		self.frontRightChannel = 0
-		self.rearLeftChannel = 0
-		self.rearRightChannel = 0
-		self.leftLeadScrewChannel = 0
-		self.rightLeadScrewChannel = 0
-		self.pulleyChannel = 0
-		self.spinBarChannel = 0
+		self.frontLeftChannel = 2
+		self.frontRightChannel = 1
+		self.rearLeftChannel = 3
+		self.rearRightChannel = 4
+		self.leftLeadScrewChannel = 6
+		self.rightLeadScrewChannel = 5
+		self.pulleyChannel = 7
+		self.spinBarChannel = 8
 		
 		self.frontLeftMotor = ctre.WPI_TalonSRX(self.frontLeftChannel)
 		self.frontRightMotor = ctre.WPI_TalonSRX(self.frontRightChannel)
