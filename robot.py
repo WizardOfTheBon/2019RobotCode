@@ -117,7 +117,7 @@ class MyRobot(wpilib.TimedRobot):
 		self.lifter1to2 = 6 + self.extraHeight # these measurements are in inches
 		self.lifter1to3 = 18 + self.extraHeight
 		self.lifter2to3 = 12 + self.extraHeight
-		self.lifterSpeed = 0.5
+		self.lifterSpeed = .5
 		
 		self.selector0to1voltage = 0.5
 		self.selector1to2voltage = 1.5
@@ -462,9 +462,7 @@ class MyRobot(wpilib.TimedRobot):
 		'''Moves the Pulley to certain levels, with a certain offset based on hatch or cargo. The cargo ship has a unique offset (supposedly), and the hatch has no offset.'''
 		currentPosition = self.pulleyMotor.getQuadraturePosition()
 		
-		if level == 0:
-			self.resetPulley()
-		elif payload == 1: # hatch
+		if payload == 1: # hatch
 			if level == 1:
 				goalPosition = self.ticksPerInchPulley * self.hatch1Height
 			elif level == 2:
@@ -481,16 +479,15 @@ class MyRobot(wpilib.TimedRobot):
 		else:
 			goalPosition = self.ticksPerInchPulley * self.cargoShipHeightInches
 			
-		if level > 0:
-			if currentPosition < (goalPosition - (self.ticksPerInchPulley * self.pulleyDeadbandInches)) and (self.topPulleyHallEffect.get()) < self.topPulleyHallEffectThreshold: # this sets a deadband for the encoders on the pulley so that the pulley doesnt go up and down forever
-				self.pulleyMotor.set(self.pulleyMotorModifier)
-				
-			elif currentPosition > (goalPosition + (self.ticksPerInchPulley * self.pulleyDeadbandInches)) and (topPulleyHallEffect.get()) < self.topPulleyHallEffectThreshold:
-				self.pulleyMotor.set(-1 * self.pulleyMotorModifier)
-				
-			else:
-				self.pulleyMotor.set(0)
-				self.queue.remove()
+		if currentPosition < (goalPosition - (self.ticksPerInchPulley * self.pulleyDeadbandInches)) and (self.topPulleyHallEffect.get()) < self.topPulleyHallEffectThreshold: # this sets a deadband for the encoders on the pulley so that the pulley doesnt go up and down forever
+			self.pulleyMotor.set(self.pulleyMotorModifier)
+			
+		elif currentPosition > (goalPosition + (self.ticksPerInchPulley * self.pulleyDeadbandInches)) and (topPulleyHallEffect.get()) < self.topPulleyHallEffectThreshold:
+			self.pulleyMotor.set(-1 * self.pulleyMotorModifier)
+			
+		else:
+			self.pulleyMotor.set(0)
+			self.queue.remove()
 		
 		
 	def dispense(self, payload):
@@ -585,7 +582,7 @@ class MyRobot(wpilib.TimedRobot):
 	def teleopInit(self):
 		
 		print('teleop starting')
-		
+		self.leftLeadScrewMotor.setQuadraturePosition(0,0)
 		
 	def checkSwitches(self):
 		
@@ -613,15 +610,22 @@ class MyRobot(wpilib.TimedRobot):
 			
 			if self.auxiliary2.getRawButton(self.leftLeadScrewDown): # left lead screw out manual
 				self.leftLeadScrewMotor.set(self.lifterSpeed)
+				print(str(self.leftLeadScrewMotor.getQuadraturePosition()))
 				
-			elif self.auxiliary2.getRawButton(self.leftLeadScewUp): # left lead screw in manual
+			elif self.auxiliary2.getRawButton(self.leftLeadScrewUp): # left lead screw in manual
 				self.leftLeadScrewMotor.set(-1 * self.lifterSpeed)
+				print(str(self.leftLeadScrewMotor.getQuadraturePosition()))
+			else:
+				self.leftLeadScrewMotor.set(0)
+				print(str(self.leftLeadScrewMotor.getQuadraturePosition()))
 				
 			if self.auxiliary2.getRawButton(self.rightLeadScrewDown): # right lead screw out manual
 				self.rightLeadScrewMotor.set(self.lifterSpeed)
 				
 			elif self.auxiliary2.getRawButton(self.rightLeadScrewUp): # right lead screw in manual
 				self.rightLeadScrewMotor.set(-1 * self.lifterSpeed)
+			else:
+				self.rightLeadScrewMotor.set(0)
 				
 				
 			if self.auxiliary2.getRawButton(self.spinBarIn): # cargo collecting
@@ -657,7 +661,7 @@ class MyRobot(wpilib.TimedRobot):
 				Deposit_pl.driveLock = True
 				self.queue.add(Deposit_pl)
 				
-			elif self.auxiliary1.getRawButton(hatchCollectHeight): # hatch collecting (from player station)
+			elif self.auxiliary1.getRawButton(self.hatchCollectHeight): # hatch collecting (from player station)
 				hatchCollectManual = Job()
 				hatchCollectManual.function = 'self.pulleyHeight'
 				hatchCollectManual.parameters = '(1, 1)'
@@ -706,7 +710,7 @@ class MyRobot(wpilib.TimedRobot):
 				
 	def teleopPeriodic(self):
 		# checks switches and sensors, which feed the queue with jobs
-		#self.checkSwitches()
+		self.checkSwitches()
 		
 		# we are checking if a job is in the queue, and then calling the function that the first job makes using eval
 		
