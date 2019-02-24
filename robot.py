@@ -10,10 +10,8 @@ import sys
 import time
 import threading
 
-
 cond = threading.Condition()
 notified = False
-
 
 def connectionListener(connected, info):
 	print(info, '; Connected=%s' % connected)
@@ -65,7 +63,6 @@ class Queue:
 
 class MyRobot(wpilib.TimedRobot):
 	def __init__(self):
-		
 		self.ticksPerInchPulley = 30 # 30 ticks per inch is just a guess, the number is probably different
 		self.ticksPerInchLifter = 30
 		self.ticksPerInchWheels = 30
@@ -91,6 +88,7 @@ class MyRobot(wpilib.TimedRobot):
 		self.selector3 = 12
 		self.selector4 = 13
 		
+		
 		# buttons
 		self.eStop = 1
 		self.manualHatchDeposit = 1
@@ -114,10 +112,10 @@ class MyRobot(wpilib.TimedRobot):
 		
 		self.extraHeight = 1 # this is the distance (in inches) that the robot will raise above each hab level before going back down
 		
-		self.lifter1to2 = 6 + self.extraHeight # these measurements are in inches
-		self.lifter1to3 = 18 + self.extraHeight
-		self.lifter2to3 = 12 + self.extraHeight
-		self.lifterSpeed = .5
+		self.Lifter1to2 = 6 + self.extraHeight # these measurements are in inches
+		self.Lifter1to3 = 18 + self.extraHeight
+		self.Lifter2to3 = 12 + self.extraHeight
+		self.lifterSpeed = .7
 		
 		self.selector0to1voltage = 0.5
 		self.selector1to2voltage = 1.5
@@ -130,10 +128,12 @@ class MyRobot(wpilib.TimedRobot):
 		
 		self.bottomPulleyHallEffectChannel = 0
 		self.topPulleyHallEffectChannel = 1
-		self.topLeftLeadScrewHallEffectChannel = 2
+		self.topLeftLeadScrewHallEffectChannel = 7
 		self.topRightLeadScrewHallEffectChannel = 3
-		self.bottomLeftLeadScrewHallEffectChannel = 4
+		self.bottomLeftLeadScrewHallEffectChannel = 9
 		self.bottomRightLeadScrewHallEffectChannel = 5
+		
+		
 		
 		self.bottomPulleyHallEffect = wpilib.DigitalInput(self.bottomPulleyHallEffectChannel)
 		self.topPulleyHallEffect = wpilib.DigitalInput(self.topPulleyHallEffectChannel)
@@ -169,13 +169,13 @@ class MyRobot(wpilib.TimedRobot):
 		self.cargo3Height = 84
 		self.cargoShipHeightInches = 36
 		
-		self.frontLeftChannel = 2
-		self.frontRightChannel = 1
-		self.rearLeftChannel = 3
-		self.rearRightChannel = 4
+		self.frontLeftChannel = 3
+		self.frontRightChannel = 5
+		self.rearLeftChannel = 4
+		self.rearRightChannel = 1
 		self.leftLeadScrewChannel = 6
-		self.rightLeadScrewChannel = 5
-		self.pulleyChannel = 7
+		self.rightLeadScrewChannel = 10
+		self.pulleyChannel = 2
 		self.spinBarChannel = 8
 		
 		self.frontLeftMotor = ctre.WPI_TalonSRX(self.frontLeftChannel)
@@ -187,7 +187,7 @@ class MyRobot(wpilib.TimedRobot):
 		self.pulleyMotor = ctre.WPI_TalonSRX(self.pulleyChannel)
 		self.spinBarMotor = ctre.WPI_TalonSRX(self.spinBarChannel)
 		
-		self.pulleyMotorModifier = 0.5 # slows down the Pulley motor speed just in case it goes way too fast
+		self.pulleyMotorModifier = 0.6 # slows down the Pulley motor speed just in case it goes way too fast
 		self.frontLeftMotor.setInverted(True)
 		self.frontRightMotor.setInverted(True)
 		self.rearLeftMotor.setInverted(True)
@@ -204,13 +204,18 @@ class MyRobot(wpilib.TimedRobot):
 		self.frontRightMotor.setSafetyEnabled(False)
 		self.rearRightMotor.setSafetyEnabled(False)
 		
-		
+		#this is the IR dist for ball
+		self.ball_dist = 2.5
+		self.hatch_dist = 3
+		self.alignB1 = 15
+		self.alignH = 35
+		self.alignCB = 12
+		self.adjust_ready = False
+		self.pulleyMotor.setQuadraturePosition(0,0)
 		#Last thing in the init function
 		super().__init__()
-		
 	def hab(self, startLevel, goalLevel):
 		'''This function will '''
-		
 		hab = Job()
 		hab.function = 'self.raiseBase'
 		hab.parameters = '(' + str(startLevel) + ', ' + str(goalLevel) + ')'
@@ -300,8 +305,6 @@ class MyRobot(wpilib.TimedRobot):
 		hab.parameters = '(self.crab5, self.frontLeftMotor)'
 		hab.driveLock = True
 		self.queue.add(hab)
-					
-		
 	def raiseBase(self, startLevel, goalLevel):
 		Left_off = 0
 		Right_off = 0
@@ -310,11 +313,11 @@ class MyRobot(wpilib.TimedRobot):
 		
 		if startLevel == 1:
 			if goalLevel == 2:
-				goalPosition = self.ticksPerInchLifter * self.lifter1to2
+				goalPosition = self.ticksPerInchLifter * self.Lifter1to2
 			elif goalLevel == 3:
-				goalPosition = self.ticksPerInchLifter * self.lifter1to3
+				goalPosition = self.ticksPerInchLifter * self.Lifter1to3
 		elif startLevel == 2:
-			goalPosition = self.ticksPerInchLifter * self.lifter2to3
+			goalPosition = self.ticksPerInchLifter * self.Lifter2to3
 		
 		if currentLeftLeadScrewPosition < goalPosition and (self.bottomLeftLeadScrewHallEffect).get() < self.bottomLeftLeadScrewHallEffectThreshold:
 			self.leftLeadScrewMotor.set(self.lifterSpeed)
@@ -332,20 +335,19 @@ class MyRobot(wpilib.TimedRobot):
 			
 		if Left_off ==1 and Right_off ==1:
 			self.queue.remove()
-		
 	def lowerLeft(self):
 		'''This moves the encoders down, or extends the lead screw.'''
 		currentLeftLeadScrewPosition = self.leftLeadScrewMotor.getQuadraturePosition()
 		
 		goalPosition = self.ticksPerInchLifter * self.extraHeight
 		
-		if currentPosition < goalPosition and (self.bottomLeftLeadScrewHallEffect.get()) < self.bottomLeftLeadScrewHallEffectThreshold:
+		if currentLeftLeadScrewPosition < goalPosition and (self.bottomLeftLeadScrewHallEffect.get()) < self.bottomLeftLeadScrewHallEffectThreshold:
 			self.leftLeadScrewMotor.set(self.lifterSpeed)
 		else:
 			self.leftLeadScrewMotor.set(0)
 			self.queue.remove()
-		
-		
+			
+			
 	def lowerRight(self):
 		
 		currentRightLeadScrewPosition = self.rightLeadScrewMotor.getQuadraturePosition()
@@ -358,8 +360,8 @@ class MyRobot(wpilib.TimedRobot):
 		else:
 			self.rightLeadScrewMotor.set(0)
 			self.queue.remove()
-		
-		
+			
+			
 	def raiseLeft(self, startLevel, goalLevel):
 		'''This raises the lead screws into the body, and is considered a negative direction.'''
 		currentLeftLeadScrewPosition = self.leftLeadScrewMotor.getQuadraturePosition()
@@ -372,13 +374,13 @@ class MyRobot(wpilib.TimedRobot):
 		elif startLevel == 2:
 			goalPosition = self.ticksPerInchLifter * self.Lifter2to3 * -1
 		
-		if currentPosition > goalPosition and (self.topLeftLeadScrewHallEffect.get()) < self.topLeftLeadScrewHallEffectThreshold:
+		if currentLeftLeadScrewPosition > goalPosition and (self.topLeftLeadScrewHallEffect.get()) < self.topLeftLeadScrewHallEffectThreshold:
 			self.leftLeadScrewMotor.set(-1 * self.lifterSpeed)
 		else:
 			self.leftLeadScrewMotor.set(0)
 			self.queue.remove()
-		
-		
+			
+			
 	def raiseRight(self, startLevel, goalLevel):
 		
 		currentRightLeadScrewPosition = self.rightLeadScrewMotor.getQuadraturePosition()
@@ -391,21 +393,19 @@ class MyRobot(wpilib.TimedRobot):
 		elif startLevel == 2:
 			goalPosition = self.ticksPerInchLifter * self.Lifter2to3 * -1
 		
-		if currentPosition > goalPosition and (self.topRightLeadScrewHallEffect.get()) < self.topRightLeadScrewHallEffectThreshold:
+		if currentRightLeadScrewPosition > goalPosition and (self.topRightLeadScrewHallEffect.get()) < self.topRightLeadScrewHallEffectThreshold:
 			self.rightLeadScrewMotor.set(-1 * self.lifterSpeed)
 		else:
 			self.rightLeadScrewMotor.set(0)
 			self.queue.remove()
-		
-		
+			
+			
 	def driveQuadratureReset(self):
 		
 		self.frontLeftMotor.setQuadraturePosition(0, 0)
 		self.frontRightMotor.setQuadraturePosition(0, 0)
 		self.rearLeftMotor.setQuadraturePosition(0, 0)
 		self.rearRightMotor.setQuadraturePosition(0, 0)
-		
-		
 	def crabLeft(self, distance, encoder):
 		
 		currentPosition = encoder.getQuadraturePosition()
@@ -423,8 +423,6 @@ class MyRobot(wpilib.TimedRobot):
 			self.rearLeftMotor.set(0)
 			self.rearRightMotor.set(0)
 			self.queue.remove()
-		
-		
 	def depositPayload(self, level, payload):
 		
 		JOB = Job()
@@ -438,9 +436,6 @@ class MyRobot(wpilib.TimedRobot):
 		JOB.parameters = '(' + str(payload) + ')'
 		JOB.driveLock = True
 		self.queue.add(JOB)
-		
-		
-		
 	def levelSelector(self):
 		'''This function returns the level as an integer by checking the rotary switch controlling rocket level.'''
 		
@@ -453,11 +448,8 @@ class MyRobot(wpilib.TimedRobot):
 		else:
 			pass
 			
-			
 	def Pulley_encoder(self):
 		currentPosition= self.pulleyMotor.getQuadraturePosition()
-		
-		
 	def pulleyHeight(self, level, payload): # level 0 is the floor, payload 1 is hatch, payload 2 is cargo, payload 3 is cargo ship cargo(not done yet)
 		'''Moves the Pulley to certain levels, with a certain offset based on hatch or cargo. The cargo ship has a unique offset (supposedly), and the hatch has no offset.'''
 		currentPosition = self.pulleyMotor.getQuadraturePosition()
@@ -476,8 +468,25 @@ class MyRobot(wpilib.TimedRobot):
 				goalPosition = self.ticksPerInchPulley * self.cargo2Height
 			else:
 				goalPosition = self.ticksPerInchPulley * self.cargo3Height
+				
+		elif payload == 6:
+			if level==1: #6 is the rocket ball
+				print('moving at ' + self.pulleyMotorModifier)
+				goalPosition = self.ticksPerInchPulley * self.alignB1
+		elif payload == 5: #5 is the rocket hatch
+			if level == 1:
+				print('moving at ' + self.pulleyMotorModifier)
+				goalPosition= self.ticksPerInchPulley * self.alignH
+		elif payload == 4: #4 is the cargoship ball
+			if level == 1:
+				print('moving at ' + self.pulleyMotorModifier)
+				goalPosition = self.ticksPerInchPulley* self.alignCB
 		else:
 			goalPosition = self.ticksPerInchPulley * self.cargoShipHeightInches
+			
+			
+
+			
 			
 		if currentPosition < (goalPosition - (self.ticksPerInchPulley * self.pulleyDeadbandInches)) and (self.topPulleyHallEffect.get()) < self.topPulleyHallEffectThreshold: # this sets a deadband for the encoders on the pulley so that the pulley doesnt go up and down forever
 			self.pulleyMotor.set(self.pulleyMotorModifier)
@@ -488,8 +497,6 @@ class MyRobot(wpilib.TimedRobot):
 		else:
 			self.pulleyMotor.set(0)
 			self.queue.remove()
-		
-		
 	def dispense(self, payload):
 		
 		currentPosition = self.spinBarMotor.getQuadraturePosition()
@@ -534,8 +541,6 @@ class MyRobot(wpilib.TimedRobot):
 				self.rearLeftMotor.set(0)
 				self.rearRightMotor.set(0)
 				self.queue.remove()
-		
-		
 	def resetSpinBar(self):
 		
 		currentPosition = self.spinBarMotor.getQuadraturePosition()
@@ -547,13 +552,9 @@ class MyRobot(wpilib.TimedRobot):
 			self.spinBarMotor.set(0)
 			self.spinBarMotor.setQuadraturePosition(offset, 0)
 			self.queue.remove()
-		
-		
 	def spinBar(self, velocity):
 		
 		self.spinBarMotor.set(velocity)
-		
-		
 	def resetPulley(self): # to bring the pulley back to its starting height
 		# go down until the hall effect sensor reads the magnet, then stop and set encoder value to 0
 		
@@ -563,8 +564,6 @@ class MyRobot(wpilib.TimedRobot):
 			self.pulleyMotor.set(0)
 			self.pulleyMotor.setQuadraturePosition(0, 0)
 			self.queue.remove()
-		
-		
 	def robotInit(self):
 		"""Robot initialization function"""
 		
@@ -572,18 +571,13 @@ class MyRobot(wpilib.TimedRobot):
 	def autonomousInit(self):
 		
 		pass
-		
-		
 	def autonomousPeriodic(self):
-		
 		pass
-		
-		
 	def teleopInit(self):
 		
 		print('teleop starting')
 		self.leftLeadScrewMotor.setQuadraturePosition(0,0)
-		
+		self.rightLeadScrewMotor.setQuadraturePosition(0,0)
 	def checkSwitches(self):
 		
 		if self.auxiliary1.getRawButton(self.eStop): #E-Stop button pressed, stop all motors and remove all jobs from job queue.
@@ -610,18 +604,17 @@ class MyRobot(wpilib.TimedRobot):
 			
 			if self.auxiliary2.getRawButton(self.leftLeadScrewDown): # left lead screw out manual
 				self.leftLeadScrewMotor.set(self.lifterSpeed)
-				print(str(self.leftLeadScrewMotor.getQuadraturePosition()))
+				#print(str(self.leftLeadScrewMotor.getQuadraturePosition()))
 				
 			elif self.auxiliary2.getRawButton(self.leftLeadScrewUp): # left lead screw in manual
 				self.leftLeadScrewMotor.set(-1 * self.lifterSpeed)
-				print(str(self.leftLeadScrewMotor.getQuadraturePosition()))
+				#print(str(self.leftLeadScrewMotor.getQuadraturePosition()))
 			else:
 				self.leftLeadScrewMotor.set(0)
-				print(str(self.leftLeadScrewMotor.getQuadraturePosition()))
+				#print(str(self.leftLeadScrewMotor.getQuadraturePosition()))
 				
 			if self.auxiliary2.getRawButton(self.rightLeadScrewDown): # right lead screw out manual
 				self.rightLeadScrewMotor.set(self.lifterSpeed)
-				
 			elif self.auxiliary2.getRawButton(self.rightLeadScrewUp): # right lead screw in manual
 				self.rightLeadScrewMotor.set(-1 * self.lifterSpeed)
 			else:
@@ -629,11 +622,11 @@ class MyRobot(wpilib.TimedRobot):
 				
 				
 			if self.auxiliary2.getRawButton(self.spinBarIn): # cargo collecting
-				if self.IRSensor.getVoltage() < self.IRSensorThreshold: # IR distance sensor stops the spinBar from spinning in when the ball is already in
-					self.spinBarMotor.set(-1)
-				else:
-					self.spinBarMotor.set(0)
-				
+				#if self.IRSensor.getVoltage() < self.IRSensorThreshold: # IR distance sensor stops the spinBar from spinning in when the ball is already in
+					#self.spinBarMotor.set(-1)
+				#else:
+					#self.spinBarMotor.set(0)
+				self.spinBarMotor.set(-1)
 			elif self.auxiliary2.getRawButton(self.spinBarOut): # manual cargo depositing
 				self.spinBarMotor.set(1)
 				
@@ -643,12 +636,15 @@ class MyRobot(wpilib.TimedRobot):
 			else:
 				self.spinBarMotor.set(0)
 				
-			if self.auxiliary2.getRawButton(self.manualPulleyUp): # manual pulley up
+			if self.auxiliary2.getRawButton(self.manualPulleyUp) and self.auxiliary2.getRawButton(1) == False: # manual pulley up
+				print('you pulled pulley up')
+				self.pulleyMotor.set(-1*self.pulleyMotorModifier)
+				
+			elif self.auxiliary2.getRawButton(self.manualPulleyDown) and self.auxiliary2.getRawButton(1) == False: # manual pulley down
+				print('you pulled pulley down')
 				self.pulleyMotor.set(self.pulleyMotorModifier)
-				
-			elif self.auxiliary2.getRawButton(self.manualPulleyDown): # manual pulley down
-				self.pulleyMotor.set(-1 * self.pulleyMotorModifier)
-				
+			else:
+				self.pulleyMotor.set(0)
 				
 				# buttons controlling Pulley (2 buttons and a rotary switch)
 				
@@ -657,7 +653,7 @@ class MyRobot(wpilib.TimedRobot):
 			if self.auxiliary1.getRawButton(self.autoHatchDeposit): # hatch movement and depositing (auto)
 				Deposit_pl = Job()
 				Deposit_pl.function = 'self.depositPayload'
-				Deposit_pl.parameters = '(self.levelSelector, 1)'
+				Deposit_pl.parameters = '(self.levelSelector(), 1)'
 				Deposit_pl.driveLock = True
 				self.queue.add(Deposit_pl)
 				
@@ -707,45 +703,85 @@ class MyRobot(wpilib.TimedRobot):
 				
 			elif self.auxiliary1.getRawButton(self.hab2to3): # hab level 2 to level 3
 				self.hab(2, 3)
-				
 	def teleopPeriodic(self):
 		# checks switches and sensors, which feed the queue with jobs
 		self.checkSwitches()
-		
 		# we are checking if a job is in the queue, and then calling the function that the first job makes using eval
 		
+		self.drive.driveCartesian(self.driveStick.getX(), self.driveStick.getY() *-1, self.driveStick.getZ(), 0)
 		if len(self.queue.queue) > 0:
 			
 			currentJob = self.queue.peek()
 			print(str(currentJob.function))
 			eval(currentJob.function + currentJob.parameters)
 			
-			# allows the driver to drive the robot when the currentJob allows them to, using the driveLock parameter in the job
+			#allows the driver to drive the robot when the currentJob allows them to, using the driveLock parameter in the job
 			if currentJob.driveLock == False:
-				self.drive.driveCartesian(self.driveStick.getX(), self.driveStick.getY(), self.driveStick.getZ(), 0)
+				self.drive.driveCartesian(self.driveStick.getX(), self.driveStick.getY()*-1, self.driveStick.getZ(), 0)
 			
 		else:
 			self.drive.driveCartesian(self.driveStick.getX(), self.driveStick.getY() *-1, self.driveStick.getZ(), 0)
-			pass
-		
-		if len(self.queue.queue) == 0 and self.auxiliary2.getRawButton(1):
-			try:
 			
+		
+	
+		if self.auxiliary2.getRawButton(1) == True:
+			self.adjust_ready = False
+			self.checkSwitches()
+			print('vision entered')
+			currentPosition = self.pulleyMotor.getQuadraturePosition() 
+			'''(self.IRSensor.getVoltage() > 0.1) and''' '''(self.IRSensor.getVoltage() < self.ball_dist) and '''
+			if ((self.adjust_ready == False) and (self.auxiliary2.getRawButton(6) == True)): #rocket ball
+				print('Quad pos is ' + str(currentPosition))
+				print('entered the rocket ball')
+				self.pulleyMotor.set(self.pulleyMotorModifier)
+				if currentPosition > -3000:
+					self.pulleyMotorModifier += 0.05
+					print('moving at ' + self.pulleyMotorModifier)
+				else:
+					self.pulleyHeight(6,1) 
+					self.pulleyMotorModifier =0.6
+					self.adjust_ready= 1
+					'''
+			if (self.IRSensor.getVoltage() > 0.1)  and (self.IRSensor.getVoltage() < self.hatch_dist)  and (self.adjust_ready == 0): #rocket hatch
+				self.pulleyMotorModifier = 0.05
+				self.pulleyMotor.set(self.pulleyMotorModifier)
+				if self.pulleyMotor.getQuadraturePosition() > 10:
+					self.pulleyMotorModifier += 0.05
+				else:
+					self.pulleyHeight(5,1)
+					self.pulleyMotorModifier =0.5
+					self.adjust_ready= 1
+					'''
+					'''(self.IRSensor.getVoltage() > 0.1) and''' '''(self.IRSensor.getVoltage() < self.ball_dist) and'''
+			if  ((self.adjust_ready == False) and (self.auxiliary2.getRawButton(7) == True)): #cargo ball
+				print('entered the cargo ball')
+				print('Quad pos is ' + str(currentPosition))
+				if currentPosition > -3000:
+					self.pulleyMotorModifier += 0.05
+					print('moving at ' + self.pulleyMotorModifier)
+					self.pulleyMotor.set(self.pulleyMotorModifier)
+				else:
+					self.pulleyHeight(4,1)
+					self.pulleyMotorModifier =0.6
+					self.adjust_ready= 1
+				
+			if self.adjust_ready == True:
 				test = 0
 				testy = 0
 				testz = 0
-				test = sd.getValue('adjust_x', 0)
-				testy = sd.getValue('adjust_y', 0)
-				testz = sd.getValue('adjust_z', 0)
-				print('x ' + str(test))
-				print('y ' + str(testy))
-				print('z ' + str(testz))
-				self.drive.driveCartesian(self.driveStick.getX(test), self.driveStick.getY(testy)*-1, self.driveStick.getZ(testz), 0)
-				print("Hi, I'm in vision")
-			except Exception as e:
-				print(str(e.args))
-			
-			
+				try:
+					test = sd.getValue('adjust_x', 0)
+					testy = sd.getValue('adjust_y', 0)
+					testz = sd.getValue('adjust_z', 0)
+					print('x ' + str(test))
+					print('y ' + str(testy))
+					print('z ' + str(testz))
+				except Exception as e:
+					print(str(e.args))
+				
+				self.drive.driveCartesian(self.driveStick.getX(test), self.driveStick.getY(testy), self.driveStick.getZ(testz), 0)
+		
+				
 				
 			
 if __name__ == "__main__":
