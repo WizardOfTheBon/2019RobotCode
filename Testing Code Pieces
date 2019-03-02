@@ -1,0 +1,68 @@
+def crabRight(self, distance):
+		
+		currentFrontPosition = self.frontLeftMotor.getQuadraturePosition()
+		currentRearPosition = self.rearLeftMotor.getQuadraturePosition()
+		
+		currentPosition = ((-1 * currentFrontPosition) + currentRearPosition)/2
+		
+		goalPosition = self.ticksPerInchCrabbing * distance
+		
+		print('function is set up')
+		
+		if currentPosition < goalPosition:
+			
+			if math.isclose(currentFrontPosition, currentRearPosition, abs_tol=self.crabTolerance):
+				self.frontLeftMotor.set(self.crabSpeed)
+				self.frontRightMotor.set(-1 * self.crabSpeed)
+				self.rearLeftMotor.set(-1 * self.crabSpeed)
+				self.rearRightMotor.set(self.crabSpeed)
+				
+				print('motors should be moving the same speed')
+				
+			elif currentFrontPosition > currentPosition:
+				self.frontLeftMotor.set(self.crabSpeed * self.crabSpeedUp)
+				self.frontRightMotor.set(-1 * self.crabSpeed * self.crabSpeedUp)
+				self.rearLeftMotor.set(-1 * self.crabSpeed * self.crabSlowDown)
+				self.rearRightMotor.set(self.crabSpeed * self.crabSlowDown)
+				
+				print('front motors should be moving faster')
+				
+			else:
+				self.frontLeftMotor.set(self.crabSpeed * self.crabSlowDown)
+				self.frontRightMotor.set(-1 * self.crabSpeed * self.crabSlowDown)
+				self.rearLeftMotor.set(-1 * self.crabSpeed * self.crabSpeedUp)
+				self.rearRightMotor.set(self.crabSpeed * self.crabSpeedUp)
+				
+				print('rear motors should be moving faster')
+				
+		else:
+			self.frontLeftMotor.set(0)
+			self.frontRightMotor.set(0)
+			self.rearLeftMotor.set(0)
+			self.rearRightMotor.set(0)
+			self.queue.remove()
+			
+			print('you have reached your goal')
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+		if self.driveStick.getRawButton(1):
+				print('button 1 works')
+				self.crabRight(self.crab3)
+			if self.driveStick.getRawButton(2):
+				print('button 2 works')
+				self.driveQuadratureReset()
+				
+				
+				
+			print(str(self.frontLeftMotor.getQuadraturePosition))
