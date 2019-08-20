@@ -130,19 +130,17 @@ class MyRobot(wpilib.TimedRobot):
 		
 		self.bottomPulleyHallEffectChannel = 0
 		self.topPulleyHallEffectChannel = 1
-		self.topLeftLeadScrewHallEffectChannel = 2
-		self.topRightLeadScrewHallEffectChannel = 3
-		self.bottomLeftLeadScrewHallEffectChannel = 4
-		self.bottomRightLeadScrewHallEffectChannel = 5
+		self.topLeftLeadScrewHallEffectChannel = 9
+		self.topRightLeadScrewHallEffectChannel = 7
+		self.bottomLeftLeadScrewHallEffectChannel = 8
+		self.bottomRightLeadScrewHallEffectChannel = 6
 		
 		self.IRSensorThreshold = 2.5
 		
-		self.bottomPulleyHallEffectThreshold = 1
-		self.topPulleyHallEffectThreshold = 1
-		self.topLeftLeadScrewHallEffectThreshold = 1
-		self.topRightLeadScrewHallEffectThreshold = 1
-		self.bottomLeftLeadScrewHallEffectThreshold = 1
-		self.bottomRightLeadScrewHallEffectThreshold = 1
+		self.topLeftLeadScrewHallEffect = wpilib.DigitalInput(self.topLeftLeadScrewHallEffectChannel)
+		self.topRightLeadScrewHallEffect = wpilib.DigitalInput(self.topRightLeadScrewHallEffectChannel)
+		self.bottomLeftLeadScrewHallEffect = wpilib.DigitalInput(self.bottomLeftLeadScrewHallEffectChannel)
+		self.bottomRightLeadScrewHallEffect = wpilib.DigitalInput(self.bottomRightLeadScrewHallEffectChannel)
 		
 		self.crab1 = -1 # these are the distances that the robot will crab onto the different hab levels, in inches
 		self.crab2 = -2
@@ -593,21 +591,29 @@ class MyRobot(wpilib.TimedRobot):
 		else: #Check every other switch
 			
 			
-			# buttons controlling spinBar (3 position momentary switch)
+			# leadscrew buttons aaaaaaaaaaaaaaannnnnnnnd limit switch stuff \/ \/ \/ 
 			
-			
-			if self.ds.getStickButton(2, self.leftLeadScrewDown)== 1: # left lead screw out manual
+			if self.ds.getStickButton(2, self.leftLeadScrewDown) and self.bottomLeftLeadScrewHallEffect == 1: # left lead screw out manual
 				self.leftLeadScrewMotor.set(self.lifterSpeed)
 				
-			elif self.ds.getStickButton(2, self.leftLeadScrewUp) ==1: # left lead screw in manual
+			elif self.ds.getStickButton(2, self.leftLeadScrewUp) and self.topLeftLeadScrewHallEffect == 1: # left lead screw in manual
 				self.leftLeadScrewMotor.set(-1 * self.lifterSpeed)
 				
-			if self.ds.getStickButton(2, self.rightLeadScrewDown) ==1: # right lead screw out manual
+			else:
+				self.leftLeadScrewMotor.set(0)
+				
+				
+			if self.ds.getStickButton(2, self.rightLeadScrewDown) and self.bottomRightLeadScrewHallEffect == 1: # right lead screw out manual
 				self.rightLeadScrewMotor.set(self.lifterSpeed)
 				
-			elif self.ds.getStickButton(2, self.rightLeadScrewUp) ==1: # right lead screw in manual
+			elif self.ds.getStickButton(2, self.rightLeadScrewUp) and self.topRightLeadScrewHallEffect == 1: # right lead screw in manual
 				self.rightLeadScrewMotor.set(-1 * self.lifterSpeed)
 				
+			else:
+				self.rightLeadScrewMotor.set(0)
+				
+				
+			# spinbar buttons
 				
 			if self.ds.getStickButton(2, self.spinBarIn) ==1: # cargo collecting
 				if self.IRSensor.getVoltage() < self.IRSensorThreshold: # IR distance sensor stops the spinBar from spinning in when the ball is already in
@@ -625,6 +631,8 @@ class MyRobot(wpilib.TimedRobot):
 				self.spinBarMotor.set(0)
 				
 				
+			# pulley up down buttons
+				
 			if self.ds.getStickButton(2, self.manualPulleyUp) ==1: # manual pulley up
 				self.pulleyMotor.set(self.pulleyMotorModifier)
 				
@@ -632,9 +640,7 @@ class MyRobot(wpilib.TimedRobot):
 				self.pulleyMotor.set(-1 * self.pulleyMotorModifier)
 				
 				
-				# buttons controlling Pulley (2 buttons and a rotary switch)
-				
-				# hatch buttons
+			# hatch buttons
 				
 			if self.ds.getStickButton(1, self.autoHatchDeposit)==1: # hatch movement and depositing (auto)
 				Deposit_pl = Job()
