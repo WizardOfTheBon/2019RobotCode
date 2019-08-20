@@ -1,0 +1,117 @@
+import wpilib
+from wpilib.drive import DifferentialDrive
+from wpilib import Relay
+import rev
+
+
+leftJoystickID = 0
+rightJoystickID = 1
+auxiliaryJoystickID = 2
+
+frontLeftPWM = 5
+frontRightPWM = 2
+rearLeftPWM = 4
+rearRightPWM = 1
+leftActuatorPWM = 6
+rightActuatorPWM = 0
+leftCalvinPWM = 1
+rightCalvinPWM = 0
+
+pcmID = 0
+class MyRobot(wpilib.TimedRobot):
+	def robotInit(self):
+		wpilib.CameraServer.launch()
+		
+		self.leftJoystick = wpilib.Joystick(leftJoystickID)
+		self.rightJoystick = wpilib.Joystick(rightJoystickID)
+		self.auxiliary = wpilib.Joystick(auxiliaryJoystickID)
+		
+		self.frontLeftMotor = wpilib.Jaguar(frontLeftPWM)
+		self.frontRightMotor = wpilib.Jaguar(frontRightPWM)
+		self.rearLeftMotor = wpilib.Jaguar(rearLeftPWM)
+		self.rearRightMotor = wpilib.Jaguar(rearRightPWM)
+		self.leftLinearActuator = wpilib.Jaguar(leftActuatorPWM)
+		self.rightLinearActuator = wpilib.Jaguar(rightActuatorPWM)
+		
+		self.left = wpilib.SpeedControllerGroup(self.frontLeftMotor, self.rearLeftMotor)
+		self.right = wpilib.SpeedControllerGroup(self.frontRightMotor, self.rearRightMotor)
+		self.drive = DifferentialDrive(self.left, self.right)
+		
+		self.leftCalvinMotor = wpilib.Relay(leftCalvinPWM, 0)
+		self.rightCalvinMotor = wpilib.Relay(rightCalvinPWM, 0)
+		
+		self.leftCalvinSolenoid = wpilib.Solenoid(pcmID, 0)
+		self.rightCalvinSolenoid = wpilib.Solenoid(pcmID, 1)
+		self.leftToteSolenoid = wpilib.Solenoid(pcmID, 2)
+		self.rightToteSolenoid = wpilib.Solenoid(pcmID, 3)
+		
+	def actuatorUp(self,speed):
+		self.leftLinearActuator.set(speed)
+		self.rightLinearActuator.set(speed)
+	def actuatorDown(self,speed):
+		self.leftLinearActuator.set(-speed)
+		self.rightLinearActuator.set(-speed)
+	def actuatorStop(self):
+		self.leftLinearActuator.set(0)
+		self.rightLinearActuator.set(0)
+	def calvinSpinIn(self):
+		self.leftCalvinMotor.set(2)
+		self.rightCalvinMotor.set(2)
+	def calvinSpinOut(self):
+		self.leftCalvinMotor.set(3)
+		self.rightCalvinMotor.set(3)
+	def calvinSpinStop(self):
+		self.leftCalvinMotor.set(0)
+		self.rightCalvinMotor.set(0)
+	def calvinGrab(self):
+		self.leftCalvinSolenoid.set(False)
+		self.rightCalvinSolenoid.set(True)
+	def calvinRelease(self):
+		self.leftCalvinSolenoid.set(True)
+		self.rightCalvinSolenoid.set(False)
+	def toteGrab(self):
+		self.leftToteSolenoid.set(True)
+		self.rightToteSolenoid.set(False)
+	def toteRelease(self):
+		self.leftToteSolenoid.set(False)
+		self.rightToteSolenoid.set(True)
+	def teleopInit(self):
+		pass
+	def teleopPeriodic(self):
+		self.drive.tankDrive(self.leftJoystick.getY() * -1, self.rightJoystick.getY() * -1)
+		
+		if self.leftJoystick.getRawButton(1):
+			self.actuatorUp(.8)
+		elif self.rightJoystick.getRawButton(1):
+			self.actuatorDown(.8)
+		else:
+			self.actuatorStop()
+			
+		if self.rightJoystick.getRawButton(11):
+			self.calvinSpinIn()
+		elif self.rightJoystick.getRawButton(10):
+			self.calvinSpinOut()
+		else:
+			self.calvinSpinStop()
+			
+		if self.auxiliary.getRawButton(5):
+			self.calvinGrab()
+		else:
+			self.calvinRelease()
+		
+		if self.auxiliary.getRawButton(4):
+			self.toteGrab()
+		else:
+			self.toteRelease()
+		if self.ds.getStickButton(0,7):
+			self.rev.CANSparkMax(4,1).set(0.3)
+		else:
+			self.rev.CANSparkMax(4,1).set(0)
+	def autonomousInit(self):
+		pass
+	def autonomousPeriodic(self):
+		self.leftCalvinMotor.set(2)
+	def disabledInit(self):
+		self.calvinSpinStop()
+if __name__ == '__main__':
+	wpilib.run(MyRobot)
